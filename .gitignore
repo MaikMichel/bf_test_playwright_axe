@@ -1,0 +1,14 @@
+# VSCode settings
+.vscode/settings.json
+
+# node dependencies
+node_modules
+
+# credentials
+.env
+
+# test output
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/
