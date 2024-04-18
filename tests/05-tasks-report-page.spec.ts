@@ -17,22 +17,34 @@ test.describe(testTitle, () => {
     await page.locator(':nth-child(3) > .t-Card > .t-Card-wrap > .t-Card-titleWrap').click();
     await expect(page).toHaveURL(expectedURLafterClickOnCard);
 
+    // make a shot
+    await page.screenshot({ path: 'screenshots/' + testTitle + '-screenshot.png', fullPage: true });
+
     // run Accessibility Test
     const accessibilityScanResults = await new AxeBuilder({ page }).analyze();
 
-    // create HtmlReport
+    // write HtmlReport
     const fileWritten = await writeHtmlReport(accessibilityScanResults, testTitle);
+
+    // add File to annotations
     test.info().annotations.push({
       type: "local-report",
       description: pathToFileURL(fileWritten).toString(),
     });
 
+    // add Array as JSON attachment
+    await test.info().attach('accessibility-scan-results', {
+      body: JSON.stringify(accessibilityScanResults, null, 2),
+      contentType: 'application/json'
+    });
+
+    // fail when defects exists in array
     expect(accessibilityScanResults.violations).toEqual([]);
   });
 
 
   // run the test
-  test('should pass axe-core accessibility tests with IFrame loaded', async ({ page }) => {
+  test(testTitle + " - with IFrame", async ({ page }) => {
     // steps to login
     await login(page);
 
@@ -48,27 +60,40 @@ test.describe(testTitle, () => {
     const frames = await page.frames();
 
 
-
+    // inspect frames
     for (const frame of frames) {
       // run promise to have an url
       const frameContent = await frame.content();
 
       // if not on main frame
       if (frame.url() != mainURL) {
-          // run Accessibility Test
-        const accessibilityScanResults = await new AxeBuilder({ page }).analyze();
-        expect(accessibilityScanResults.violations).toEqual([]);
 
         // goto to frame as page
         await page.goto(frame.url());
 
+        // make a shot
+        await page.screenshot({ path: 'screenshots/' + testTitle + '-screenshot-iframe.png', fullPage: true });
+
         // run Accessibility Test
-        const accessibilityScanResultsX = await new AxeBuilder({ page }).analyze();
+        const accessibilityScanResults = await new AxeBuilder({ page }).analyze();
 
-        // create HtmlReport
-        writeHtmlReport(accessibilityScanResults, testTitle + "-iframe");
+        // add File to annotations
+        const fileWritten = await writeHtmlReport(accessibilityScanResults, testTitle + "-iframe");
 
-        expect(accessibilityScanResultsX.violations).toEqual([]);
+        // add File to annotations
+        test.info().annotations.push({
+          type: "local-report",
+          description: pathToFileURL(fileWritten).toString(),
+        });
+
+        // add Array as JSON attachment
+        await test.info().attach('accessibility-scan-results', {
+          body: JSON.stringify(accessibilityScanResults, null, 2),
+          contentType: 'application/json'
+        });
+
+        // fail when defects exists in array
+        expect(accessibilityScanResults.violations).toEqual([]);
       }
     }
 
