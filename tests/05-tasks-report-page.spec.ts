@@ -55,13 +55,41 @@ test.describe(testTitle, () => {
     // click edit
     await page.locator(':nth-child(2) > .a-IRR-linkCol > a > .fa').click();
 
-    // check frames
-    const mainURL = page.url();
-    const frames = await page.frames();
+    // wait
+    await page.waitForSelector("#apex_dialog_1 > iframe");
 
+    /* // check frames
+    const mainURL = page.url();
+    const frames =  page.frames(); */
+
+    // make a shot
+    await page.screenshot({ path: 'screenshots/' + testTitle + '-screenshot-with-iframe.png', fullPage: true });
+
+
+
+    // run Accessibility Test
+    const accessibilityScanResults = await new AxeBuilder({ page }).options({ iframes: true}).analyze();
+
+    // write HtmlReport
+    const fileWritten = await writeHtmlReport(accessibilityScanResults, testTitle + "-with-iframe");
+
+    // add File to annotations
+    test.info().annotations.push({
+      type: "local-report",
+      description: pathToFileURL(fileWritten).toString(),
+    });
+
+    // add Array as JSON attachment
+    await test.info().attach('accessibility-scan-results', {
+      body: JSON.stringify(accessibilityScanResults, null, 2),
+      contentType: 'application/json'
+    });
+
+    // fail when defects exists in array
+    expect(accessibilityScanResults.violations).toEqual([]);
 
     // inspect frames
-    for (const frame of frames) {
+    /* for (const frame of frames) {
       // run promise to have an url
       const frameContent = await frame.content();
 
@@ -75,7 +103,7 @@ test.describe(testTitle, () => {
         await page.screenshot({ path: 'screenshots/' + testTitle + '-screenshot-iframe.png', fullPage: true });
 
         // run Accessibility Test
-        const accessibilityScanResults = await new AxeBuilder({ page }).analyze();
+        const accessibilityScanResults = await new AxeBuilder({ page }).options({iframes:true}).analyze();
 
         // add File to annotations
         const fileWritten = await writeHtmlReport(accessibilityScanResults, testTitle + "-iframe");
@@ -95,7 +123,7 @@ test.describe(testTitle, () => {
         // fail when defects exists in array
         expect(accessibilityScanResults.violations).toEqual([]);
       }
-    }
+    } */
 
 
   });
